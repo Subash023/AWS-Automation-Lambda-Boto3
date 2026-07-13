@@ -1,0 +1,11 @@
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Sid": "SNSPublishPermissions",
+			"Effect": "Allow",
+			"Action": "sns:Publish",
+			"Resource": "arn:aws:sns:us-east-1:311925399650:EC2-State-Change-Topic"
+		}
+	]
+}
