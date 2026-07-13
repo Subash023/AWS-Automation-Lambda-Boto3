@@ -1,0 +1,51 @@
+import os
+import boto3
+
+# Initialize the SNS Client
+sns_client = boto3.client('sns')
+
+# Fallback to an environment variable for security, or pastethe ARN directly
+SNS_TOPIC_ARN = os.environ.get('SNS_TOPIC_ARN', 'arn:aws:sns:us-east-1:311925399650:EC2-State-Change-Topic')
+
+def lambda_handler(event, context):
+    try:
+        # Extract the instance ID and state from the native EventBridge event envelope
+        instance_id = event['detail']['instance-id']
+        state = event['detail']['state']
+        region = event['region']
+
+        # construct a clean, user-friendly alert message
+        subject = f"Alert: EC2 Instance {instance_id} Changed State"
+        message = (
+            f"An EC2 instance state changes has been detected.\n\n"
+            f"Instance ID: {instance_id}\n"
+            f"New State: {state.upper()}\n"
+            f"Region: {region}\n"
+        )
+        #Publish the state change details to the SNS topic
+        response = sns_client.publish(
+            TopicArn=SNS_TOPIC_ARN,
+            Subject=subject,
+            Message=message
+        )
+        print(f"Successfully processed notification for {instance_id}. MessageId: {response['MessageId']}")
+        return {
+            "statusCode": 200,
+            "body": "Notification sent successfully!"
+        }
+        
+    except Keyerror as e:
+        print(f"Error prasing EventBridge payload. Missing key: {str(e)}")
+        return {
+            "statusCode": 400,
+            "body": "Invalid event payload structured format."
+        }
+    
+    except Exception as e:
+        print(f"An Unexpected error occured: {str(e)}")
+        return {
+            "statusCode": 500,
+            "body": "Internal notification failure."
+        }
+    
+    
